@@ -15,70 +15,24 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Setup Python
+        uses: actions/setup-python@v4
         with:
-          python-version: "3.11"
+          python-version: "3.10"
 
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
           pip install -r requirements.txt
+          pip install pyinstaller
 
-      - name: List directory structure
-        run: |
-          Write-Host "Current directory: $PWD"
-          Write-Host "Root directory contents:"
-          Get-ChildItem | Select-Object Name, PSIsContainer
-          Write-Host "Font directory contents:"
-          if (Test-Path "font") {
-            Get-ChildItem "font" | Select-Object Name
-          } else {
-            Write-Host "font directory not found"
-          }
-
-      - name: Verify required files
-        run: |
-          if (-not (Test-Path "font/Cubic_11.ttf")) {
-            Write-Error "font/Cubic_11.ttf not found. Current directory: $PWD"
-            Get-ChildItem -Recurse -Filter "*.ttf" | Select-Object FullName
-            exit 1
-          }
-          Write-Host "✓ font/Cubic_11.ttf found"
-          
-          if (-not (Test-Path "liver.ico")) {
-            Write-Error "liver.ico not found"
-            exit 1
-          }
-          Write-Host "✓ liver.ico found"
-          
-          if (-not (Test-Path "work_time_one.spec")) {
-            Write-Error "work_time_one.spec not found"
-            exit 1
-          }
-          Write-Host "✓ work_time_one.spec found"
-          
-          Write-Host "All required files verified successfully"
-
-      - name: Build executable with PyInstaller
-        run: |
-          pyinstaller --clean work_time_one.spec
-
-      - name: Verify build output
-        run: |
-          if (-not (Test-Path "dist\work_time_one.exe")) {
-            Write-Error "Build failed: work_time_one.exe not found"
-            exit 1
-          }
-          $fileSize = (Get-Item "dist\work_time_one.exe").Length
-          Write-Host "Build successful! File size: $fileSize bytes"
+      - name: Build executable
+        run: pyinstaller --onefile --noconsole --clean --icon=liver.ico work_time.py
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: work_time_one.exe
           path: dist/work_time_one.exe
-          retention-days: 7
 
   release:
     needs: build
